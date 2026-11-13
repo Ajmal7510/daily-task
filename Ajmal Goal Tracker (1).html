@@ -1,0 +1,646 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ajmal Goal Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600;700&display=swap">
+<style>
+/* Layout: a phone-style app in one centered column. Home shows today's 5 habits, 4 section tabs hold the full task lists, bottom tab bar. */
+:root{
+  --bg:#F1F5F2;
+  --surface:#FFFFFF;
+  --ink:#14251E;
+  --muted:#5C7067;
+  --line:#DCE5DF;
+  --accent:#0E7C66;
+  --warn:#B7791F;
+  --c-code:#0E7C66;
+  --c-eng:#2F6FD6;
+  --c-health:#C8503A;
+  --c-job:#9A6A12;
+  --font-display:'Sora',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1512;--surface:#17211C;--ink:#E8F1EC;--muted:#92A69C;--line:#26342D;
+    --accent:#3CC4A2;--warn:#E3A93B;--c-code:#3CC4A2;--c-eng:#6C9BEF;--c-health:#EE8068;--c-job:#E3A93B;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1512;--surface:#17211C;--ink:#E8F1EC;--muted:#92A69C;--line:#26342D;
+  --accent:#3CC4A2;--warn:#E3A93B;--c-code:#3CC4A2;--c-eng:#6C9BEF;--c-health:#EE8068;--c-job:#E3A93B;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--ink);
+  font:15px/1.5 var(--font-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0;
+}
+.shell{max-width:480px;margin:0 auto;padding-block:20px 120px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:26px;line-height:1.2}
+h2{font-size:20px}
+h3{font-size:15px}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;white-space:nowrap}
+.chip svg{width:14px;height:14px;stroke:var(--warn);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+.today{display:flex;align-items:center;gap:16px}
+.today>div:last-child{min-width:0}
+.ring{position:relative;width:84px;height:84px;flex:none}
+.ring svg{width:84px;height:84px;transform:rotate(-90deg)}
+.ring .track{stroke:var(--line)}
+.ring .fill{stroke:var(--accent);transition:stroke-dashoffset .35s ease}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:700 20px var(--font-display);font-variant-numeric:tabular-nums}
+
+.list{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:6px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.chk{flex:1;min-width:0;display:flex;align-items:flex-start;gap:12px;text-align:left;background:none;border:0;padding:12px 4px}
+.box{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;margin-top:0;transition:background .15s,border-color .15s;background:var(--surface)}
+.box svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+[aria-checked="true"] .box{background:var(--sec,var(--accent));border-color:var(--sec,var(--accent))}
+[aria-checked="true"] .box svg{opacity:1}
+.lbl{min-width:0;overflow-wrap:anywhere;padding-top:1px}
+.lbl small{display:block;color:var(--muted);font-size:12.5px}
+[aria-checked="true"] .lbl{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.del{flex:none;border:0;background:none;color:var(--muted);width:36px;height:36px;border-radius:50%;font-size:20px;line-height:1}
+
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--sec,var(--accent));border-radius:99px;transition:width .3s ease}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sc{display:flex;flex-direction:column;gap:10px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;min-width:0}
+.sc .n{font:600 13px var(--font-body);color:var(--sec)}
+.sc .c{font:700 22px var(--font-display);font-variant-numeric:tabular-nums}
+.sc .c span{font-size:14px;color:var(--muted);font-weight:600}
+
+.next{display:flex;flex-direction:column;gap:8px}
+.btn{align-self:flex-start;background:var(--sec,var(--accent));color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:600}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+:root .btn{color:#fff}
+:root .btn.ghost{color:var(--ink)}
+
+.sechead{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.sechead .big{font:700 13px var(--font-body);color:var(--sec);letter-spacing:.08em;text-transform:uppercase}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links a{font-size:13px;font-weight:600;color:var(--ink);text-decoration:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px}
+
+details.phase{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:0 16px}
+details.phase+details.phase,.stack>*+*{margin-top:0}
+details.phase summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 0;cursor:pointer}
+details.phase summary::-webkit-details-marker{display:none}
+.ph{flex:1;min-width:0}
+.ph b{display:block;font:600 15px var(--font-display)}
+.ph span{font-size:12.5px;color:var(--muted)}
+.cnt{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--sec)}
+.chev{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+details[open] .chev{transform:rotate(180deg)}
+details.phase .list{padding-bottom:8px}
+
+.add{display:flex;gap:8px;padding:8px 0 12px}
+.add input{flex:1;min-width:0;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.add button{border:0;background:var(--sec,var(--accent));color:#fff;border-radius:12px;padding:0 16px;font-weight:600}
+.note{border-left:3px solid var(--sec);background:var(--surface);border-radius:0 14px 14px 0;padding:12px 14px;font-size:14px}
+
+.foot{margin-top:22px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  padding:8px max(16px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));z-index:5}
+.tabs nav{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:6px 0;border-radius:12px;color:var(--muted);font-size:11px;font-weight:600;min-width:0}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--ink)}
+.tab[aria-current="page"] svg{stroke:var(--sec,var(--accent))}
+.tab[aria-current="page"] span{box-shadow:inset 0 -2px 0 var(--sec,var(--accent))}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.mhead h2{font-size:17px;text-align:center;flex:1}
+.mbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center;padding:0}
+.mbtn svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mbtn:disabled{opacity:.35;cursor:default}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow{font-size:11px;font-weight:600;text-align:center;color:var(--muted);padding-bottom:2px}
+.day{aspect-ratio:1;min-width:0;border-radius:12px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;padding:0;position:relative}
+.day.l1,.day.l2{background:color-mix(in srgb,var(--accent) 22%,var(--surface));border-color:transparent}
+.day.l3,.day.l4{background:color-mix(in srgb,var(--accent) 50%,var(--surface));border-color:transparent}
+.day.l5{background:var(--accent);border-color:transparent;color:#fff}
+.day.fut{opacity:.35;cursor:default}
+.day.now{box-shadow:0 0 0 2px var(--ink)}
+.day.sel{outline:2px solid var(--accent);outline-offset:2px}
+.empty{display:block}
+.legend{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:12px;flex-wrap:wrap}
+.legend i{width:14px;height:14px;border-radius:5px;display:inline-block;border:1px solid var(--line)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--bg);border-radius:14px;padding:10px 12px}
+.stat b{display:block;font:700 20px var(--font-display);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.wk{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:10px 0;text-align:left}
+.wk:first-child{border-top:0}
+.wk .d{width:64px;flex:none;font-size:13px;font-weight:600}
+.wk .bar{flex:1}
+.wk .t{width:34px;flex:none;text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.mark{flex:none;font-size:12px;font-weight:700;border-radius:99px;padding:2px 8px;margin-left:auto}
+.mark.y{color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.mark.n{color:var(--muted);background:var(--bg)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.file{position:relative;overflow:hidden}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="shell" id="app"></div>
+<div class="tabs"><nav id="nav" aria-label="Sections"></nav></div>
+
+<script>
+(function(){
+  var ICON={
+    home:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    coding:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
+    english:'<path d="M4 5h16v11H9l-5 4z"/>',
+    health:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+    job:'<path d="M4 8h16v11H4zM9 8V5h6v3M4 13h16"/>',
+    history:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'
+  };
+  var CHECK='<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>';
+  var CHEV='<svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
+
+  var DAILY=[
+    ['gym','Gym or walk','6:30 AM, about 1 hour'],
+    ['eng','English: 5 new words, 5 sentences aloud','7:45 AM, 20 minutes'],
+    ['code','Coding: one small step','Between shifts, 1 hour'],
+    ['read','Read 2 pages and write 3 lines in diary','10:30 PM, 10 minutes'],
+    ['sleep','Go to sleep on time','Same time every night, 7 to 8 hours']
+  ];
+
+  var SECTIONS={
+    coding:{name:'Coding',color:'--c-code',title:'Coding from scratch',
+      sub:'Java full stack. One hour a day. Finish one small step, then tick it.',
+      links:[['Java Programming (free)','https://java-programming.mooc.fi'],['Java roadmap','https://roadmap.sh/java'],['Spring guides','https://spring.io/guides']],
+      phases:[
+        {name:'1. Java basics',when:'About 3 weeks',tasks:[
+          'Install JDK 21 and IntelliJ IDEA Community (both free)',
+          'Write Hello World and run it',
+          'Variables and data types: write 5 small programs',
+          'if / else and switch: make a marks and grade checker',
+          'Loops (for, while): print a multiplication table and a star pattern',
+          'Methods: write 5 methods with parameters and return values',
+          'Arrays and Strings: reverse a string, find the biggest number',
+          'Solve 20 easy practice problems']},
+        {name:'2. Object oriented programming',when:'About 3 weeks',tasks:[
+          'Class and object: make a Student class',
+          'Constructors and the this keyword',
+          'Encapsulation: private fields with getters and setters',
+          'Inheritance and polymorphism',
+          'Interface and abstract class',
+          'Mini project: bank account app in the console']},
+        {name:'3. More Java',when:'About 2 weeks',tasks:[
+          'Collections: ArrayList, HashMap, HashSet',
+          'Exceptions: try, catch, finally',
+          'Lambda and Streams basics',
+          'Mini project: contact book or library app in the console']},
+        {name:'4. Git and GitHub',when:'About 1 week',tasks:[
+          'Git basics: init, add, commit, push',
+          'Branches and a pull request',
+          'Write a clear README for each project (simple English is fine)',
+          'Push all your projects to your GitHub profile']},
+        {name:'5. SQL and PostgreSQL',when:'About 2 weeks',tasks:[
+          'Install PostgreSQL and create a database',
+          'CREATE, INSERT, SELECT, UPDATE, DELETE',
+          'WHERE, ORDER BY, GROUP BY',
+          'JOIN two tables',
+          'Design the tables for a small project']},
+        {name:'6. Web basics',when:'About 3 weeks',tasks:[
+          'HTML: page structure and forms',
+          'CSS: Flexbox and a mobile friendly layout',
+          'JavaScript basics: DOM and events',
+          'Call an API with fetch()',
+          'Build a portfolio page and put it on GitHub Pages']},
+        {name:'7. Spring Boot',when:'About 4 weeks',tasks:[
+          'Create a project with Spring Initializr',
+          'Controller, Service and Repository layers',
+          'Build a REST API: GET, POST, PUT, DELETE',
+          'Connect to PostgreSQL with Spring Data JPA',
+          'Validation and error handling',
+          'Test every endpoint with Postman']},
+        {name:'8. Security',when:'About 2 weeks',tasks:[
+          'Spring Security basics',
+          'Login with JWT',
+          'Roles: admin and user',
+          'Project: task manager API with login']},
+        {name:'9. React basics',when:'About 3 weeks',tasks:[
+          'Components, props and state',
+          'Call your Spring Boot API from React',
+          'Build a login page and a list page']},
+        {name:'10. Portfolio and deploy',when:'About 4 weeks',tasks:[
+          'Rebuild a smaller, clean version of Learn Up',
+          'Full stack project: React + Spring Boot + PostgreSQL',
+          'Deploy it on a free plan and add the live link',
+          'Write 3 lines about each project for your resume']}
+      ]},
+    english:{name:'English',color:'--c-eng',title:'English, step by step',
+      sub:'Small daily practice beats long sessions. Use Malayalam meanings when a word is hard.',
+      links:[],
+      phases:[
+        {name:'1. Basic words and sentences',when:'Weeks 1 to 4',tasks:[
+          'Learn 100 common words with Malayalam meanings',
+          'Learn present, past and future tense with 3 examples each',
+          'Write 10 sentences about your day',
+          'Say 5 sentences aloud every day for 7 days',
+          'Watch one episode with English subtitles and note 5 new words']},
+        {name:'2. Reading',when:'Weeks 3 to 8',tasks:[
+          'Read 2 pages of The Alchemist every day for 7 days',
+          'Underline new words and write their meanings',
+          'Finish the first chapter',
+          'Tell the story of the chapter in 3 simple lines']},
+        {name:'3. Speaking',when:'Weeks 5 to 12',tasks:[
+          'Record a 1 minute voice note about your day',
+          'Introduce yourself in English for 1 minute',
+          'Practice the answer to: Tell me about yourself',
+          'Talk in English with a friend for 10 minutes']},
+        {name:'4. Writing',when:'Weeks 6 to 12',tasks:[
+          'Write your diary in English for 7 days',
+          'Write one short email to a friend',
+          'Write a README for one of your projects in English']}
+      ]},
+    health:{name:'Health',color:'--c-health',title:'Health and energy',
+      sub:'Sleep first, then gym, then food. Cheap and simple.',
+      links:[],
+      phases:[
+        {name:'1. Sleep',when:'Start now',tasks:[
+          'Write down one fixed bedtime and one wake up time',
+          'Keep the phone away for 30 minutes before bed',
+          'Sleep 7 hours or more for 7 nights in a row',
+          'Skip the night security shift until sleep is steady']},
+        {name:'2. Exercise',when:'Weeks 1 to 4',tasks:[
+          'Go to the gym 3 times in the first week',
+          'Go 6 days a week for 2 weeks',
+          'Sunday: run or walk for 20 minutes',
+          'Stretch for 5 minutes every day for 7 days']},
+        {name:'3. Food',when:'Every day',tasks:[
+          'Eat eggs, fish or dal, and rice every day',
+          'No coffee on an empty stomach for 7 days',
+          'Drink water on every delivery break',
+          'Check your weight once a week and write it in the diary']},
+        {name:'4. Check up',when:'This month',tasks:[
+          'Show your last blood test to a doctor and ask about food and exercise']}
+      ]},
+    job:{name:'Job',color:'--c-job',title:'First IT job',
+      sub:'Keep delivery work while you learn. Plan for about 6 to 9 months of steady work (an estimate).',
+      links:[],
+      note:'Never pay money for a job guarantee course. Your projects on GitHub are your proof.',
+      phases:[
+        {name:'1. Study path',when:'This month',tasks:[
+          'Read 10 Java developer job posts and note if a degree is required',
+          'Compare BCA and B.Com online: fee, UGC recognition, time',
+          'Choose one option and write down the last date to apply']},
+        {name:'2. Profile',when:'After phase 4 of coding',tasks:[
+          'Make a 1 page resume',
+          'Write a short bio on your GitHub profile',
+          'Make a LinkedIn profile with your projects']},
+        {name:'3. Interview practice',when:'Month 4 onwards',tasks:[
+          'Prepare answers to 30 common Java questions',
+          'Solve 10 coding problems every week',
+          'Practice the answer to: Tell me about yourself']},
+        {name:'4. Apply',when:'Month 6 onwards',tasks:[
+          'Make a list of 20 companies and startups in Kerala',
+          'Apply to 5 jobs or internships every week',
+          'Ask for feedback after every interview']}
+      ]}
+  };
+  var ORDER=['coding','english','health','job'];
+  var VIEWS=['home'].concat(ORDER,['history']);
+
+  /* ---------- state ---------- */
+  var KEY='ajmal-goal-tracker-v1';
+  function fresh(){return {done:{},daily:{},custom:[]};}
+  function norm(s){
+    s=s&&typeof s==='object'?s:{};
+    return {done:s.done||{},daily:s.daily||{},custom:Array.isArray(s.custom)?s.custom:[]};
+  }
+  var state=fresh();
+  try{var raw=localStorage.getItem(KEY);if(raw)state=norm(JSON.parse(raw));}catch(e){}
+  var _n=new Date();
+  var ui={open:{},confirmReset:false,hy:_n.getFullYear(),hm:_n.getMonth(),sel:null,msg:''};
+  var dl=null;
+  var dbDoc=null,synced=false,dirty=false,saving=false,saveTimer=null,syncErr=false;
+
+  function pad(n){return n<10?'0'+n:''+n;}
+  function dayKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function today(){return dayKey(new Date());}
+
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+    if(!dbDoc)return;
+    dirty=true;
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(flush,500);
+  }
+  function prune(){
+    var cut=new Date();cut.setDate(cut.getDate()-800);var ck=dayKey(cut);
+    Object.keys(state.daily).forEach(function(k){if(k<ck)delete state.daily[k];});
+  }
+  async function flush(){
+    if(!dbDoc||saving)return;
+    saving=true;
+    try{
+      while(dirty){
+        dirty=false;prune();
+        await dbDoc.set(JSON.parse(JSON.stringify(state)));
+      }
+      syncErr=false;
+    }catch(e){syncErr=true;}
+    saving=false;
+    var el=document.getElementById('sync');if(el)el.textContent=syncText();
+  }
+  function syncText(){
+    if(synced&&!syncErr)return 'Progress is saved to your account and works on all your devices.';
+    return 'Progress is saved on this device only.';
+  }
+
+  /* ---------- data helpers ---------- */
+  function tid(key,pi,ti){return key+'-'+pi+'-'+ti;}
+  function customOf(key){return state.custom.filter(function(c){return c.sec===key;});}
+  function secStats(key){
+    var S=SECTIONS[key],done=0,total=0;
+    S.phases.forEach(function(p,pi){p.tasks.forEach(function(t,ti){total++;if(state.done[tid(key,pi,ti)])done++;});});
+    customOf(key).forEach(function(c){total++;if(state.done[c.id])done++;});
+    return {done:done,total:total};
+  }
+  function dailyDone(){var d=state.daily[today()]||{};return DAILY.filter(function(x){return d[x[0]];}).length;}
+  function streak(){
+    var n=0,d=new Date();
+    function cnt(dt){var o=state.daily[dayKey(dt)]||{};return Object.keys(o).filter(function(k){return o[k];}).length;}
+    if(cnt(d)<3)d.setDate(d.getDate()-1);
+    while(cnt(d)>=3){n++;d.setDate(d.getDate()-1);}
+    return n;
+  }
+  function isDone(scope,id,date){
+    if(scope==='daily'){var d=state.daily[date||today()];return !!(d&&d[id]);}
+    return !!state.done[id];
+  }
+  function countOn(key){
+    var o=state.daily[key]||{};
+    return DAILY.filter(function(x){return o[x[0]];}).length;
+  }
+  function parseKey(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+
+  /* ---------- views ---------- */
+  function row(scope,id,text,sub,sec,del,date){
+    var on=isDone(scope,id,date);
+    return '<div class="row"><button class="chk" role="checkbox" aria-checked="'+on+'" data-act="toggle" data-scope="'+scope+'" data-id="'+esc(id)+'"'+(date?' data-date="'+date+'"':'')+'>'
+      +'<span class="box">'+CHECK+'</span><span class="lbl">'+esc(text)+(sub?'<small>'+esc(sub)+'</small>':'')+'</span></button>'
+      +(del?'<button class="del" aria-label="Delete task" data-act="del" data-id="'+esc(id)+'">&times;</button>':'')+'</div>';
+  }
+
+  function viewHome(){
+    var done=dailyDone(),total=DAILY.length,C=2*Math.PI*34;
+    var off=C*(1-done/total),st=streak();
+    var left=total-done;
+    var msg=left===0?'All 5 done today. Good work.':(left+' left today. Coding for 1 hour matters most.');
+    var d=new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+    var next=null;
+    var cs=SECTIONS.coding;
+    outer:for(var pi=0;pi<cs.phases.length;pi++){for(var ti=0;ti<cs.phases[pi].tasks.length;ti++){
+      if(!state.done[tid('coding',pi,ti)]){next={t:cs.phases[pi].tasks[ti],p:cs.phases[pi].name};break outer;}}}
+    var h='<div class="top"><div><p class="eyebrow">'+esc(d)+'</p><h1>Hi Ajmal</h1></div>'
+      +'<span class="chip"><svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/></svg>'+st+(st===1?' day':' days')+'</span></div>';
+    h+='<div class="stack">';
+    h+='<div class="card"><div class="today"><div class="ring"><svg viewBox="0 0 84 84"><circle class="track" cx="42" cy="42" r="34" fill="none" stroke-width="8"/><circle class="fill" cx="42" cy="42" r="34" fill="none" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/></svg><b>'+done+'/'+total+'</b></div>'
+      +'<div><h2>Today</h2><p class="muted small">'+esc(msg)+'</p></div></div>'
+      +'<div class="list" style="margin-top:8px">'+DAILY.map(function(x){return row('daily',x[0],x[1],x[2]);}).join('')+'</div>'
+      +'<p class="muted small" style="margin-top:6px">Streak counts days with 3 or more tasks done.</p></div>';
+    if(next){
+      h+='<div class="card next" style="--sec:var(--c-code)"><p class="eyebrow" style="margin:0">Next in coding</p><h3>'+esc(next.t)+'</h3><p class="muted small">'+esc(next.p)+'</p>'
+        +'<button class="btn" data-act="nav" data-to="coding">Open coding</button></div>';
+    }
+    h+='<div class="grid">'+ORDER.map(function(k){
+      var s=secStats(k),pc=s.total?Math.round(100*s.done/s.total):0;
+      return '<button class="sc" style="--sec:var('+SECTIONS[k].color+')" data-act="nav" data-to="'+k+'"><span class="n">'+SECTIONS[k].name+'</span>'
+        +'<span class="c">'+s.done+'<span> / '+s.total+'</span></span><span class="bar"><i style="width:'+pc+'%"></i></span></button>';
+    }).join('')+'</div>';
+    h+='<div class="foot"><p class="muted small" id="sync">'+esc(syncText())+'</p>';
+    h+=ui.confirmReset
+      ?'<p class="small">This clears all ticks and your own tasks.</p><div style="display:flex;gap:8px"><button class="btn" style="--sec:var(--c-health)" data-act="reset-yes">Yes, reset</button><button class="btn ghost" data-act="reset-no">Cancel</button></div>'
+      :'<button class="btn ghost" data-act="reset">Reset all progress</button>';
+    h+='</div></div>';
+    return h;
+  }
+
+  function viewSection(key){
+    var S=SECTIONS[key],st=secStats(key),pc=st.total?Math.round(100*st.done/st.total):0;
+    var firstInc=-1;
+    S.phases.forEach(function(p,pi){
+      if(firstInc>=0)return;
+      for(var ti=0;ti<p.tasks.length;ti++){if(!state.done[tid(key,pi,ti)]){firstInc=pi;return;}}
+    });
+    var h='<div style="--sec:var('+S.color+')"><div class="sechead"><span class="big">'+esc(S.name)+'</span><h1>'+esc(S.title)+'</h1><p class="muted">'+esc(S.sub)+'</p>'
+      +'<div class="bar"><i style="width:'+pc+'%"></i></div><p class="small muted">'+st.done+' of '+st.total+' done</p>';
+    if(S.links&&S.links.length){h+='<div class="links">'+S.links.map(function(l){return '<a href="'+l[1]+'" target="_blank" rel="noopener">'+esc(l[0])+'</a>';}).join('')+'</div>';}
+    h+='</div><div class="stack">';
+    if(S.note)h+='<div class="note">'+esc(S.note)+'</div>';
+    S.phases.forEach(function(p,pi){
+      var pid=key+pi,d=0;
+      p.tasks.forEach(function(t,ti){if(state.done[tid(key,pi,ti)])d++;});
+      var open=(pid in ui.open)?ui.open[pid]:(pi===firstInc);
+      h+='<details class="phase" data-pid="'+pid+'"'+(open?' open':'')+'><summary><div class="ph"><b>'+esc(p.name)+'</b><span>'+esc(p.when)+'</span></div><span class="cnt">'+d+'/'+p.tasks.length+'</span>'+CHEV+'</summary>'
+        +'<div class="list">'+p.tasks.map(function(t,ti){return row('task',tid(key,pi,ti),t,'',key);}).join('')+'</div></details>';
+    });
+    var cu=customOf(key),cid=key+'-mine',copen=(cid in ui.open)?ui.open[cid]:cu.length>0;
+    h+='<details class="phase" data-pid="'+cid+'"'+(copen?' open':'')+'><summary><div class="ph"><b>My own tasks</b><span>Add anything you need</span></div><span class="cnt">'+cu.filter(function(c){return state.done[c.id];}).length+'/'+cu.length+'</span>'+CHEV+'</summary>'
+      +'<div class="list">'+cu.map(function(c){return row('task',c.id,c.text,'',key,true);}).join('')+'</div>'
+      +'<form class="add" data-sec="'+key+'"><input id="new-'+key+'" type="text" maxlength="120" placeholder="New task" autocomplete="off" aria-label="New task"><button type="submit">Add</button></form></details>';
+    h+='</div></div>';
+    return h;
+  }
+
+  function viewHistory(){
+    var now=new Date(),tk=today(),sel=ui.sel||tk,y=ui.hy,m=ui.hm;
+    var dim=new Date(y,m+1,0).getDate(),off=(new Date(y,m,1).getDay()+6)%7;
+    var isCur=(y===now.getFullYear()&&m===now.getMonth());
+    var atEnd=(y>now.getFullYear())||(y===now.getFullYear()&&m>=now.getMonth());
+    var elapsed=isCur?now.getDate():(new Date(y,m,1)>now?0:dim);
+    var full=0,three=0,ticks=0,cells='';
+    ['M','T','W','T','F','S','S'].forEach(function(x){cells+='<span class="dow">'+x+'</span>';});
+    for(var i=0;i<off;i++)cells+='<span></span>';
+    for(var d=1;d<=dim;d++){
+      var k=y+'-'+pad(m+1)+'-'+pad(d),c=countOn(k),fut=k>tk;
+      if(!fut){ticks+=c;if(c===5)full++;if(c>=3)three++;}
+      cells+='<button class="day'+(c?' l'+c:'')+(fut?' fut':'')+(k===tk?' now':'')+(k===sel?' sel':'')+'"'+(fut?' disabled':'')
+        +' data-act="pickday" data-date="'+k+'" aria-label="'+d+' '+esc(new Date(y,m,d).toLocaleDateString('en-IN',{month:'long'}))+': '+c+' of 5 done"><span>'+d+'</span></button>';
+    }
+    var avg=elapsed?Math.round(100*ticks/(5*elapsed)):0;
+    var mlabel=new Date(y,m,1).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+    var sd=parseKey(sel),sc=countOn(sel),so=state.daily[sel]||{};
+    var slabel=sd.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    var h='<div class="top"><div><p class="eyebrow">Your record</p><h1>History</h1></div></div><div class="stack">';
+    h+='<div class="card"><div class="mhead"><button class="mbtn" data-act="mprev" aria-label="Previous month"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>'
+      +'<h2>'+esc(mlabel)+'</h2><button class="mbtn" data-act="mnext" aria-label="Next month"'+(atEnd?' disabled':'')+'><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>'
+      +'<div class="cal">'+cells+'</div>'
+      +'<div class="legend">None<i></i>1-2<i style="background:color-mix(in srgb,var(--accent) 22%,var(--surface))"></i>3-4<i style="background:color-mix(in srgb,var(--accent) 50%,var(--surface))"></i>All 5<i style="background:var(--accent)"></i></div></div>';
+    h+='<div class="stats"><div class="stat"><b>'+full+'</b><span>Full days</span></div><div class="stat"><b>'+three+'</b><span>Days with 3+</span></div><div class="stat"><b>'+avg+'%</b><span>Month average</span></div></div>';
+    h+='<div class="card"><h2 style="font-size:17px">'+esc(slabel)+'</h2><p class="muted small" style="margin-bottom:4px">'+sc+' of 5 done ('+Math.round(sc*20)+'%)'+(sel<tk?'. You can fix this day if you forgot to tick.':'')+'</p><div class="list">'
+      +DAILY.map(function(x){
+        var on=!!so[x[0]];
+        return '<div class="row"><button class="chk" role="checkbox" aria-checked="'+on+'" data-act="toggle" data-scope="daily" data-id="'+x[0]+'" data-date="'+sel+'">'
+          +'<span class="box">'+CHECK+'</span><span class="lbl">'+esc(x[1])+'</span></button><span class="mark '+(on?'y':'n')+'">'+(on?'Done':'Not done')+'</span></div>';
+      }).join('')+'</div></div>';
+    h+='<div class="card"><h2 style="font-size:17px;margin-bottom:6px">Last 7 days</h2>';
+    for(var j=0;j<7;j++){
+      var dt=new Date();dt.setDate(dt.getDate()-j);var kk=dayKey(dt),cc=countOn(kk);
+      h+='<button class="wk" data-act="pickday" data-date="'+kk+'"><span class="d">'+esc(dt.toLocaleDateString('en-IN',{weekday:'short',day:'numeric'}))+'</span>'
+        +'<span class="bar"><i style="width:'+(cc*20)+'%;background:var(--accent)"></i></span><span class="t">'+cc+'/5</span></button>';
+    }
+    h+='</div>';
+    h+='<div class="card"><h2 style="font-size:17px">Backup</h2><p class="muted small" style="margin:4px 0 10px">Your record is stored in this browser, in your phone memory. If you clear the site data it can be lost, so save a backup file now and then.</p>'
+      +'<div class="btnrow">'+(dl?'<button class="btn" data-act="backup">Save backup</button>':'')
+      +'<label class="btn ghost file" style="display:inline-block">Restore backup<input id="restore" type="file" accept=".json,application/json" aria-label="Restore backup file"></label></div>'
+      +(ui.msg?'<p class="small" role="status" style="margin-top:10px">'+esc(ui.msg)+'</p>':'')+'</div>';
+    h+='</div>';
+    return h;
+  }
+
+  function currentView(){
+    var v=(location.hash||'').replace('#','');
+    return VIEWS.indexOf(v)>=0?v:'home';
+  }
+
+  function render(){
+    var v=currentView();
+    var ae=document.activeElement,keep=null;
+    if(ae&&ae.tagName==='INPUT'&&ae.id){keep={id:ae.id,val:ae.value,pos:ae.selectionStart};}
+    var app=document.getElementById('app');
+    app.innerHTML=v==='home'?viewHome():(v==='history'?viewHistory():viewSection(v));
+    if(keep){var el=document.getElementById(keep.id);if(el){el.value=keep.val;el.focus();try{el.setSelectionRange(keep.pos,keep.pos);}catch(e){}}}
+    var nav=document.getElementById('nav');
+    nav.innerHTML=VIEWS.map(function(k){
+      var plain=(k==='home'||k==='history');
+      var nm=k==='home'?'Home':(k==='history'?'History':SECTIONS[k].name),col=plain?'--accent':SECTIONS[k].color;
+      return '<button class="tab" style="--sec:var('+col+')" data-act="nav" data-to="'+k+'"'+(k===v?' aria-current="page"':'')+'><svg viewBox="0 0 24 24">'+ICON[k]+'</svg><span>'+nm+'</span></button>';
+    }).join('');
+    document.title='Ajmal Goal Tracker';
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-act]');if(!b)return;
+    var a=b.getAttribute('data-act');
+    if(a==='nav'){
+      var to=b.getAttribute('data-to');
+      if(currentView()===to){window.scrollTo(0,0);return;}
+      location.hash=to;return;
+    }
+    if(a==='toggle'){
+      var id=b.getAttribute('data-id'),sc=b.getAttribute('data-scope');
+      if(sc==='daily'){
+        var k=b.getAttribute('data-date')||today();state.daily[k]=state.daily[k]||{};
+        if(state.daily[k][id])delete state.daily[k][id];else state.daily[k][id]=1;
+      }else{
+        if(state.done[id])delete state.done[id];else state.done[id]=1;
+      }
+      save();render();return;
+    }
+    if(a==='del'){
+      var did=b.getAttribute('data-id');
+      state.custom=state.custom.filter(function(c){return c.id!==did;});
+      delete state.done[did];save();render();return;
+    }
+    if(a==='pickday'){
+      var pk=b.getAttribute('data-date'),pd=parseKey(pk);
+      ui.sel=pk;ui.hy=pd.getFullYear();ui.hm=pd.getMonth();render();return;
+    }
+    if(a==='mprev'){ui.hm--;if(ui.hm<0){ui.hm=11;ui.hy--;}render();return;}
+    if(a==='mnext'){ui.hm++;if(ui.hm>11){ui.hm=0;ui.hy++;}render();return;}
+    if(a==='backup'){
+      if(!dl)return;
+      dl.save({filename:'goal-backup-'+today()+'.json',data:JSON.stringify({app:'ajmal-goal-tracker',saved:today(),state:state},null,1)})
+        .then(function(){ui.msg='Backup file saved.';render();})
+        .catch(function(err){ui.msg=(err&&err.code==='declined')?'Backup cancelled.':'Backup could not be saved here.';render();});
+      return;
+    }
+    if(a==='reset'){ui.confirmReset=true;render();return;}
+    if(a==='reset-no'){ui.confirmReset=false;render();return;}
+    if(a==='reset-yes'){state=fresh();ui.confirmReset=false;ui.open={};save();render();return;}
+  });
+  document.addEventListener('submit',function(e){
+    var f=e.target.closest('form.add');if(!f)return;
+    e.preventDefault();
+    var inp=f.querySelector('input'),t=inp.value.trim();
+    if(!t)return;
+    state.custom.push({id:'c'+Date.now().toString(36)+Math.floor(Math.random()*1000),sec:f.getAttribute('data-sec'),text:t.slice(0,120)});
+    ui.open[f.getAttribute('data-sec')+'-mine']=true;
+    inp.value='';save();render();
+  });
+  document.addEventListener('toggle',function(e){
+    var d=e.target;
+    if(d&&d.tagName==='DETAILS'&&d.getAttribute('data-pid'))ui.open[d.getAttribute('data-pid')]=d.open;
+  },true);
+  document.addEventListener('change',function(e){
+    var inp=e.target;if(!inp||inp.id!=='restore'||!inp.files||!inp.files[0])return;
+    var fr=new FileReader();
+    fr.onload=function(){
+      try{
+        var obj=JSON.parse(String(fr.result)),inc=norm(obj&&obj.state?obj.state:obj);
+        Object.keys(inc.done).forEach(function(k){if(inc.done[k])state.done[k]=1;});
+        Object.keys(inc.daily).forEach(function(dk){
+          state.daily[dk]=state.daily[dk]||{};
+          Object.keys(inc.daily[dk]).forEach(function(t){if(inc.daily[dk][t])state.daily[dk][t]=1;});
+        });
+        inc.custom.forEach(function(c){
+          if(c&&c.id&&c.text&&!state.custom.some(function(x){return x.id===c.id;}))state.custom.push({id:String(c.id),sec:String(c.sec),text:String(c.text).slice(0,120)});
+        });
+        save();ui.msg='Backup restored. Your ticks were merged with it.';
+      }catch(err){ui.msg='That file could not be read.';}
+      render();
+    };
+    fr.onerror=function(){ui.msg='That file could not be read.';render();};
+    fr.readAsText(inp.files[0]);
+  });
+  window.addEventListener('hashchange',function(){ui.confirmReset=false;render();window.scrollTo(0,0);});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)render();});
+
+  render();
+
+  (async function(){
+    try{
+      var c=window.claude;if(!c||!c.use)return;
+      dl=await c.use('downloads');
+      if(dl&&currentView()==='history'&&!document.activeElement.closest('form'))render();
+    }catch(e){}
+  })();
+
+  /* ---------- account sync (optional) ---------- */
+  (async function(){
+    try{
+      var c=window.claude;if(!c||!c.use)return;
+      var db=await c.use('db');if(!db)return;
+      dbDoc=db.doc('app/state');synced=true;
+      var el=document.getElementById('sync');if(el)el.textContent=syncText();
+      dbDoc.onSnapshot(function(snap){
+        if(snap.metadata.hasPendingWrites||dirty||saving)return;
+        if(!snap.exists)return;
+        var incoming=norm(JSON.parse(JSON.stringify(snap.data())));
+        if(JSON.stringify(incoming)===JSON.stringify(state))return;
+        state=incoming;
+        try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+        render();
+      },function(){synced=false;var el2=document.getElementById('sync');if(el2)el2.textContent=syncText();});
+    }catch(e){}
+  })();
+})();
+</script>
+
+</body></html>
